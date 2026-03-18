@@ -6,11 +6,11 @@
 
   > *"From AI writing code to AI ensuring responsible AI"*
 
-  [![GitLab CI](https://img.shields.io/badge/GitLab_CI-integrated-FC6D26?style=for-the-badge&logo=gitlab)](https://gitlab.com)
-  [![Sony FHIBE](https://img.shields.io/badge/Dataset-Sony_FHIBE-ff007f?style=for-the-badge)](https://fairnessbenchmark.ai.sony/)
-  [![Anthropic](https://img.shields.io/badge/Model-Claude_Vision-blueviolet?style=for-the-badge&logo=anthropic)](https://anthropic.com)
-  [![OpenAI](https://img.shields.io/badge/Model-OpenAI_GPT--4V-412991?style=for-the-badge&logo=openai)](https://openai.com)
-  [![Flask](https://img.shields.io/badge/Framework-Flask-black?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
+  [![GitLab CI](/home/nursena/Desktop/repo/Nexus-81/logos/gitlab.png)](https://gitlab.com)
+  [![Sony FHIBE](/home/nursena/Desktop/repo/Nexus-81/logos/Sony_AI.png)](https://fairnessbenchmark.ai.sony/)
+  [![Anthropic](/home/nursena/Desktop/repo/Nexus-81/logos/Antrophic.jpg)](https://anthropic.com)
+  [![OpenAI](/home/nursena/Desktop/repo/Nexus-81/logos/openai.png)](https://openai.com)
+  [![Flask](/home/nursena/Desktop/repo/Nexus-81/logos/flask.webp)](https://flask.palletsprojects.com/)
 </div>
 
 ---
