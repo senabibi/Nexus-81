@@ -1,16 +1,17 @@
 <div align="center">
   <img src="assets/banner.png" alt="NEXUS-81 Banner" width="800"/>
 
-  # NEXUS-81
-  **Autonomous VLM (Vision-Language Model) Bias Auditor**
+# NEXUS-81
+**Autonomous VLM (Vision-Language Model) Bias Auditor**
 
-  > *"From AI writing code to AI ensuring responsible AI"*
+> *"From AI writing code to AI ensuring responsible AI"*
 
-  [![GitLab CI](/home/nursena/Desktop/repo/Nexus-81/logos/gitlab.png)](https://gitlab.com)
-  [![Sony FHIBE](/home/nursena/Desktop/repo/Nexus-81/logos/Sony_AI.png)](https://fairnessbenchmark.ai.sony/)
-  [![Anthropic](/home/nursena/Desktop/repo/Nexus-81/logos/Antrophic.jpg)](https://anthropic.com)
-  [![OpenAI](/home/nursena/Desktop/repo/Nexus-81/logos/openai.png)](https://openai.com)
-  [![Flask](/home/nursena/Desktop/repo/Nexus-81/logos/flask.webp)](https://flask.palletsprojects.com/)
+<div align="center">
+  <img src="logos/gitlab-ci.png" height="35"/> &nbsp;
+  <img src="logos/Sony_AI.png" height="35"/> &nbsp;
+  <img src="logos/Antrophic.jpg" height="35"/> &nbsp;
+  <img src="logos/openai.jpg" height="35"/> &nbsp;
+  <img src="logos/flask.webp" height="35"/>
 </div>
 
 ---
@@ -23,41 +24,6 @@ When a developer opens a Merge Request containing model changes, NEXUS-81 activa
 
 ---
 
-## 🛠️ Tools & Technologies Used
-
-We built NEXUS-81 by bringing together the industry's most powerful AI, ethics, and DevOps tools.
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="20%">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/Sony_logo.svg" height="40" alt="Sony AI Logo" style="background-color: white; padding: 5px; border-radius: 5px;"/><br><br>
-        <b>Sony AI & FHIBE</b><br>
-        <i>Fair Human-Centric Images Benchmark</i>
-      </td>
-      <td align="center" width="20%">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Anthropic_logo.svg" height="40" alt="Anthropic Logo" style="background-color: white; padding: 5px; border-radius: 5px;"/><br><br>
-        <b>Anthropic Claude</b><br>
-        <i>Vision-Language Model Analysis</i>
-      </td>
-      <td align="center" width="20%">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e3/GitLab_logo.svg" height="40" alt="GitLab CI Logo"/><br><br>
-        <b>GitLab Duo Agents</b><br>
-        <i>CI/CD Autonomous Pipeline</i>
-      </td>
-      <td align="center" width="20%">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4d/OpenAI_Logo.svg" height="40" alt="OpenAI Logo" style="background-color: white; padding: 5px; border-radius: 5px;"/><br><br>
-        <b>OpenAI GPT-4V</b><br>
-        <i>Adversarial Multi-Turn Prompting</i>
-      </td>
-      <td align="center" width="20%">
-        <img src="https://flask.palletsprojects.com/en/2.3.x/_images/flask-logo.png" height="40" alt="Flask Logo" style="background-color: white; padding: 5px; border-radius: 5px;"/><br><br>
-        <b>Flask + Python Data Tools</b><br>
-        <i>NumPy & Pandas Engine</i>
-      </td>
-    </tr>
-  </table>
-</div>
 
 ---
 
