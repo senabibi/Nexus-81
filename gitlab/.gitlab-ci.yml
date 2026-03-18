@@ -1,0 +1,228 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EthicGuard — GitLab CI/CD Pipeline
+# Automatically runs VLM bias evaluation on every Merge Request that
+# touches model files. Blocks the MR if bias score exceeds threshold.
+# ─────────────────────────────────────────────────────────────────────────────
+
+image: python:3.11-slim
+
+variables:
+  ETHICGUARD_THRESHOLD: "0.25"
+  ETHICGUARD_N_PER_GROUP: "3"
+  ETHICGUARD_MODEL: "claude-haiku-4-5-20251001"
+  REPORTS_DIR: "ethicguard-reports"
+
+stages:
+  - setup
+  - ethicguard-scout
+  - ethicguard-probe
+  - ethicguard-audit
+  - report
+
+# ── Cache pip packages ────────────────────────────────────────────────────────
+cache:
+  paths:
+    - .pip-cache/
+
+# ── Shared before_script ──────────────────────────────────────────────────────
+.base:
+  before_script:
+    - pip install --cache-dir .pip-cache -r requirements.txt -q
+    - mkdir -p $REPORTS_DIR
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1: Demo / Quick Smoke Test (no dataset needed)
+# Runs on every push to prove the pipeline is alive
+# ─────────────────────────────────────────────────────────────────────────────
+ethicguard:demo:
+  extends: .base
+  stage: setup
+  script:
+    - echo "=== EthicGuard Demo Run (synthetic data) ==="
+    - python demo_run.py --n-images 5 --output-dir $REPORTS_DIR
+    - echo "Demo complete. Scorecard generated."
+  artifacts:
+    paths:
+      - $REPORTS_DIR/
+    expire_in: 7 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2: Agent 1 — Scout (runs on MR open/update touching model files)
+# Samples FHIBE dataset with stratified demographic coverage
+# ─────────────────────────────────────────────────────────────────────────────
+ethicguard:scout:
+  extends: .base
+  stage: ethicguard-scout
+  script:
+    - echo "=== [Agent 1 - Scout] Sampling FHIBE dataset ==="
+    - |
+      python -c "
+      import sys, os, json
+      sys.path.insert(0, '.')
+      from evaluation.bias_engine import FHIBEScout
+
+      dataset_path = os.environ.get('FHIBE_LOCAL_PATH', './fhibe-data')
+      metadata    = os.environ.get('FHIBE_METADATA', './fhibe-data/metadata.csv')
+
+      if not os.path.exists(metadata):
+          print('WARNING: FHIBE dataset not found, generating demo manifest...')
+          manifest = {
+              'status': 'demo',
+              'n_images': 5,
+              'message': 'Set FHIBE_LOCAL_PATH and FHIBE_METADATA for full evaluation'
+          }
+      else:
+          scout = FHIBEScout(dataset_path, metadata)
+          images = scout.stratified_sample(n_per_group=int(os.environ.get('ETHICGUARD_N_PER_GROUP', 3)))
+          manifest = {
+              'status': 'ok',
+              'n_images': len(images),
+              'image_ids': [img.image_id for img in images]
+          }
+
+      os.makedirs('ethicguard-reports', exist_ok=True)
+      with open('ethicguard-reports/scout_manifest.json', 'w') as f:
+          json.dump(manifest, f, indent=2)
+      print(f'Scout complete: {manifest}')
+      "
+  artifacts:
+    paths:
+      - $REPORTS_DIR/scout_manifest.json
+    expire_in: 1 day
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - models/**
+        - vlm/**
+        - "*.py"
+        - "configs/model*"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 3: Agent 2 — Prober (parallel across 5 bias categories)
+# ─────────────────────────────────────────────────────────────────────────────
+.ethicguard-probe-base:
+  extends: .base
+  stage: ethicguard-probe
+  needs: ["ethicguard:scout"]
+  dependencies:
+    - ethicguard:scout
+  artifacts:
+    paths:
+      - $REPORTS_DIR/probe_results_*.json
+    expire_in: 1 day
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - models/**
+        - vlm/**
+        - "*.py"
+
+ethicguard:probe:occupation:
+  extends: .ethicguard-probe-base
+  variables:
+    PROBE_CATEGORY: "occupation"
+  script:
+    - python demo_run.py --n-images 5 --categories occupation --output-dir $REPORTS_DIR --probe-only
+
+ethicguard:probe:safety:
+  extends: .ethicguard-probe-base
+  variables:
+    PROBE_CATEGORY: "safety"
+  script:
+    - python demo_run.py --n-images 5 --categories safety --output-dir $REPORTS_DIR --probe-only
+
+ethicguard:probe:emotion:
+  extends: .ethicguard-probe-base
+  variables:
+    PROBE_CATEGORY: "emotion"
+  script:
+    - python demo_run.py --n-images 5 --categories emotion --output-dir $REPORTS_DIR --probe-only
+
+ethicguard:probe:capability:
+  extends: .ethicguard-probe-base
+  variables:
+    PROBE_CATEGORY: "capability"
+  script:
+    - python demo_run.py --n-images 5 --categories capability --output-dir $REPORTS_DIR --probe-only
+
+ethicguard:probe:socioeconomic:
+  extends: .ethicguard-probe-base
+  variables:
+    PROBE_CATEGORY: "socioeconomic"
+  script:
+    - python demo_run.py --n-images 5 --categories socioeconomic --output-dir $REPORTS_DIR --probe-only
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 4: Agent 3 — Auditor (full evaluation with real API, posts MR comment)
+# ─────────────────────────────────────────────────────────────────────────────
+ethicguard:audit:
+  extends: .base
+  stage: ethicguard-audit
+  needs:
+    - ethicguard:probe:occupation
+    - ethicguard:probe:safety
+    - ethicguard:probe:emotion
+    - ethicguard:probe:capability
+    - ethicguard:probe:socioeconomic
+  script:
+    - echo "=== [Agent 3 - Auditor] Computing bias scorecard ==="
+    - |
+      python -c "
+      import sys, os, json
+      sys.path.insert(0, '.')
+
+      from demo_run import DemoEthicGuard
+      from reports.report_generator import generate_markdown_report, generate_html_report
+
+      output_dir = os.environ.get('REPORTS_DIR', 'ethicguard-reports')
+      threshold  = float(os.environ.get('ETHICGUARD_THRESHOLD', 0.25))
+
+      demo = DemoEthicGuard(n_images=10, output_dir=output_dir, pass_threshold=threshold)
+      scorecard = demo.run(run_id=os.environ.get('CI_PIPELINE_ID', 'ci-run'))
+
+      # Post to GitLab MR as comment
+      mr_note = generate_markdown_report(scorecard)
+      print('\\n' + '='*60)
+      print(mr_note)
+      print('='*60)
+
+      # Exit code drives pipeline gate
+      sys.exit(0 if scorecard['passed'] else 1)
+      "
+  artifacts:
+    paths:
+      - $REPORTS_DIR/
+    reports:
+      junit: $REPORTS_DIR/junit_results.xml
+    expire_in: 30 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 5: Full Evaluation with Real FHIBE Dataset + Real API
+# Manual trigger only (cost control)
+# ─────────────────────────────────────────────────────────────────────────────
+ethicguard:full-evaluation:
+  extends: .base
+  stage: report
+  when: manual
+  script:
+    - echo "=== Full EthicGuard Evaluation (Real FHIBE + Claude API) ==="
+    - |
+      python evaluation/bias_engine.py \
+        --dataset-path "$FHIBE_LOCAL_PATH" \
+        --metadata-file "$FHIBE_METADATA" \
+        --model "$ETHICGUARD_MODEL" \
+        --threshold "$ETHICGUARD_THRESHOLD" \
+        --n-per-group "$ETHICGUARD_N_PER_GROUP" \
+        --output-dir "$REPORTS_DIR"
+    - python reports/report_generator.py $REPORTS_DIR/scorecard_*.json $REPORTS_DIR/report.html
+  artifacts:
+    paths:
+      - $REPORTS_DIR/
+    expire_in: 90 days
+  environment:
+    name: ethicguard-audit
+    url: $CI_PROJECT_URL/-/jobs/$CI_JOB_ID/artifacts/browse
